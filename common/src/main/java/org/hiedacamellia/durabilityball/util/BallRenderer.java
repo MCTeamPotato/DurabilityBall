@@ -14,6 +14,7 @@ public class BallRenderer {
 
     private static final ResourceLocation T = new ResourceLocation(DurabilityBall.MOD_ID, "textures/gui/0.png");
 
+    private static int lastDamageValue = -1;
 
     public static void renderBall(ItemStack itemStack, GuiGraphics guiGraphics, int i, int j) {
         int maxDamage = itemStack.getMaxDamage();
@@ -21,12 +22,20 @@ public class BallRenderer {
         float percent = (float)damageValue/(float)maxDamage;
         long time = Minecraft.getInstance().level.getGameTime()%1200;
 
+        ClientConfig config = AutoConfig.getConfigHolder(ClientConfig.class).getConfig();
+
+        float t=0F;
+        if(lastDamageValue != damageValue){
+            lastDamageValue = damageValue;
+            if(config.shakeWhenDurabilityChange)
+                t=config.shakeRange;
+        }
+
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         pose.translate(i,j,300);
-        pose.translate(1.2,1.2,0);
+        pose.translate(1.2,1.2+t,0);
 
-        ClientConfig config = AutoConfig.getConfigHolder(ClientConfig.class).getConfig();
         switch (config.position){
             case TOP_LEFT:
                 break;
@@ -40,7 +49,7 @@ public class BallRenderer {
                 pose.translate(10.6,10.6,0);
                 break;
         }
-        int color = itemStack.getBarColor();
+        int color = itemStack.getBarColor() + config.colorShift;
         float red = ((color >> 16) & 0xFF) / 255f;
         float green = ((color >> 8) & 0xFF) / 255f;
         float blue = ((color) & 0xFF) / 255f;
@@ -53,7 +62,7 @@ public class BallRenderer {
         RenderSystem.setShaderColor(red, green, blue, 1);
         guiGraphics.blit(T,  0,  0, 0, 0, 3, 3, 3, 3);
         RenderSystem.setShaderColor(1, 1, 1, 1);
-        if(itemStack.isEnchanted()){
+        if(itemStack.isEnchanted()&&config.enableEnchantLightWhenLow){
             RenderSystem.enableBlend();
             RenderSystem.enableDepthTest();
             guiGraphics.blit(TextureUtil.getTexture((int) ((time/3)%7)),  0,  0, 0, 0, 3, 3, 3, 3);
